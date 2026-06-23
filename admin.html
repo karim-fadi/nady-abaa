@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ABAA Trends Cup – Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, getDocs, increment }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCo9k2OLVQprNoCFEjEAHVInOcvS7NlUvo",
+  authDomain: "abrar-100.firebaseapp.com",
+  projectId: "abrar-100",
+  storageBucket: "abrar-100.firebasestorage.app",
+  messagingSenderId: "1031124601739",
+  appId: "1:1031124601739:web:0fbbf88a38d32ffae47d8e",
+  measurementId: "G-YCSYCQ6DV2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const ACTION_MAP = {
+  "attack":  { delta: +5,   label: "Attack",     desc: "Attendance · +5",  variable: false },
+  "head":    { delta: +10,  label: "Head",        desc: "Tasmee3 · +10",   variable: false },
+  "assist":  { delta: +3,   label: "Assist",      desc: "Interaction · +3", variable: false },
+  "sprint":  { delta: null, label: "Sprint",      desc: "Bonus · variable", variable: true  },
+  "yellow":  { delta: -2,   label: "Yellow Card", desc: "Warning · −2",     variable: false },
+  "penalty": { delta: -5,   label: "Penalty",     desc: "Red Card · −5",    variable: false }
+};
+
+let currentAction  = null;
+let html5QrCode    = null;
+let scanProcessing = false;
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+async function findStudentById(id) {
+  const snap = await getDocs(collection(db, "nady-abaa"));
+  return snap.docs.find(d => String(d.data().id) === String(id).trim()) || null;
+}
+
+async function applyDelta(studentDocId, delta) {
+  await updateDoc(doc(db, "nady-abaa", studentDocId), { score: increment(delta) });
+}
+
+function showResult(type, msg) {
+  const el = document.getElementById("scan-result");
+  el.textContent = msg;
+  el.className = "scan-result " + type;
+}
+
+// ── QR scanner (rebuilt every open) ──────────────────────────────────────────
+function startFreshScanner() {
+  scanProcessing = false;
+  const container = document.getElementById("qr-reader");
+  container.innerHTML = "";           // wipe any leftover DOM
+  html5QrCode = null;
+
+  html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 220, height: 220 } },
+    onScanSuccess,
+    () => {}
+  ).catch(err => showResult("error", "Camera error: " + err));
+}
+
+async function stopScanner() {
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch(_) {}
+    try { html5QrCode.clear(); }     catch(_) {}
+    html5QrCode = null;
+  }
+  document.getElementById("qr-reader").innerHTML = "";
+}
+
+async function onScanSuccess(decodedText) {
+  if (scanProcessing) return;
+  scanProcessing = true;
+
+  await stopScanner();   // stop immediately so no more frames fire
+
+  showResult("loading", "Processing…");
+
+  const match = await findStudentById(decodedText);
+  if (!match) {
+    showResult("error", "No student with ID: " + decodedText.trim());
+    scanProcessing = false;
+    return;
+  }
+
+  const delta = currentAction.delta;
+  await applyDelta(match.id, delta);
+
+  const sign = delta > 0 ? "+" : "";
+  showResult("success", "✅ " + match.id + "\n" + currentAction.label + ": " + sign + delta + " pts");
+  scanProcessing = false;
+}
+
+// ── open action → maybe bonus prompt → QR modal ───────────────────────────────
+window.openScanner = (actionKey) => {
+  const action = { ...ACTION_MAP[actionKey] };
+  if (action.variable) {
+    document.getElementById("bonus-modal").classList.add("open");
+    document.getElementById("bonus-input").value = "";
+    document.getElementById("bonus-error").textContent = "";
+    window._pendingActionKey = actionKey;
+    setTimeout(() => document.getElementById("bonus-input").focus(), 150);
+    return;
+  }
+  launchQrModal(action);
+};
+
+window.confirmBonus = () => {
+  const val = parseInt(document.getElementById("bonus-input").value, 10);
+  if (isNaN(val) || val <= 0) {
+    document.getElementById("bonus-error").textContent = "⚠ Please enter a positive number.";
+    return;
+  }
+  document.getElementById("bonus-modal").classList.remove("open");
+  const action = { ...ACTION_MAP[window._pendingActionKey], delta: val, desc: "Bonus · +" + val };
+  launchQrModal(action);
+};
+
+window.closeBonusModal = () => {
+  document.getElementById("bonus-modal").classList.remove("open");
+};
+
+function launchQrModal(action) {
+  currentAction = action;
+  document.getElementById("modal-title").textContent = action.label.toUpperCase();
+  document.getElementById("modal-desc").textContent  = action.desc;
+  document.getElementById("scan-result").textContent = "";
+  document.getElementById("scan-result").className   = "scan-result";
+  document.getElementById("qr-modal").classList.add("open");
+  startFreshScanner();
+}
+
+window.closeModal = async () => {
+  await stopScanner();
+  scanProcessing = false;
+  document.getElementById("qr-modal").classList.remove("open");
+  currentAction = null;
+};
+
+// RESCAN: stop current, wait a tick, start fresh
+window.rescan = async () => {
+  showResult("", "");
+  await stopScanner();
+  setTimeout(startFreshScanner, 300);
+};
+
+// ── add student ───────────────────────────────────────────────────────────────
+window.addStudent = async () => {
+  const nameInput = document.getElementById("new-name");
+  const teamSel   = document.getElementById("new-team");
+  const fb        = document.getElementById("add-feedback");
+  const name = nameInput.value.trim();
+  const team = teamSel.value;
+
+  if (!name) { fb.textContent = "⚠ Please enter a name."; fb.className = "fb-error"; return; }
+  if (!team) { fb.textContent = "⚠ Please select a team."; fb.className = "fb-error"; return; }
+
+  fb.textContent = "Adding…"; fb.className = "fb-loading";
+
+  const existing = await getDoc(doc(db, "nady-abaa", name));
+  if (existing.exists()) {
+    fb.textContent = "⚠ A student with this name already exists.";
+    fb.className = "fb-error"; return;
+  }
+
+  const snap = await getDocs(collection(db, "nady-abaa"));
+  const usedIds = new Set(snap.docs.map(d => String(d.data().id)));
+  let newId;
+  do { newId = String(Math.floor(1000 + Math.random() * 9000)); }
+  while (usedIds.has(newId));
+
+  await setDoc(doc(db, "nady-abaa", name), { id: newId, score: 0, team });
+
+  fb.textContent = "✅ " + name + " added! ID: " + newId;
+  fb.className = "fb-success";
+  nameInput.value = "";
+  teamSel.value   = "";
+};
+
+// ── manual points adjustment ──────────────────────────────────────────────────
+window.applyManual = async () => {
+  const idInput  = document.getElementById("manual-id");
+  const ptsInput = document.getElementById("manual-pts");
+  const modeEl   = document.getElementById("manual-mode");
+  const fb       = document.getElementById("manual-feedback");
+
+  const studentId = idInput.value.trim();
+  const pts       = parseInt(ptsInput.value, 10);
+  const mode      = modeEl.value; // "add" or "deduct"
+
+  if (!studentId) { fb.textContent = "⚠ Enter a student ID."; fb.className = "fb-error"; return; }
+  if (isNaN(pts) || pts <= 0) { fb.textContent = "⚠ Enter a valid positive number."; fb.className = "fb-error"; return; }
+
+  fb.textContent = "Applying…"; fb.className = "fb-loading";
+
+  const match = await findStudentById(studentId);
+  if (!match) {
+    fb.textContent = "⚠ No student found with ID: " + studentId;
+    fb.className = "fb-error"; return;
+  }
+
+  const delta = mode === "deduct" ? -pts : pts;
+  await applyDelta(match.id, delta);
+
+  const sign = delta > 0 ? "+" : "";
+  fb.textContent = "✅ " + match.id + ": " + sign + delta + " pts applied.";
+  fb.className = "fb-success";
+  idInput.value  = "";
+  ptsInput.value = "";
+};
+</script>
+</head>
+<body class="admin-page">
+
+<div class="starfield" id="starfield"></div>
+
+<!-- ── header ─────────────────────────────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <div class="logo-shield small">
+        <div class="shield-cross">✝</div>
+        <div class="shield-text">
+          <span class="st-abaa">ABAA<br>TRENDS</span>
+          <span class="st-cup">CUP</span>
+        </div>
+        <div class="shield-crown">♛</div>
+      </div>
+    </div>
+    <div class="header-title">
+      <p class="ht-sub">Season 2026</p>
+      <h1 class="ht-main">ADMIN PANEL</h1>
+      <p class="ht-tagline">Control Center</p>
+    </div>
+    <a href="index.html" class="admin-link">← LEADERBOARD</a>
+  </div>
+  <div class="header-glow"></div>
+</header>
+
+<!-- ── action buttons ─────────────────────────────────────────────────────────── -->
+<section class="admin-section">
+  <h2 class="admin-section-title">⚡ SCORE ACTIONS</h2>
+  <p class="admin-section-sub">Tap an action, then scan the student's QR code</p>
+  <div class="actions-grid">
+    <button class="action-btn positive" onclick="openScanner('attack')">
+      <span class="ab-icon">🎯</span>
+      <span class="ab-label">ATTACK</span>
+      <span class="ab-sub">Attendance · +5</span>
+    </button>
+    <button class="action-btn positive" onclick="openScanner('head')">
+      <span class="ab-icon">🧠</span>
+      <span class="ab-label">HEAD</span>
+      <span class="ab-sub">Tasmee3 · +10</span>
+    </button>
+    <button class="action-btn positive" onclick="openScanner('assist')">
+      <span class="ab-icon">🤝</span>
+      <span class="ab-label">ASSIST</span>
+      <span class="ab-sub">Interaction · +3</span>
+    </button>
+    <button class="action-btn positive sprint" onclick="openScanner('sprint')">
+      <span class="ab-icon">🚀</span>
+      <span class="ab-label">SPRINT</span>
+      <span class="ab-sub">Bonus · variable ✎</span>
+    </button>
+    <button class="action-btn negative" onclick="openScanner('yellow')">
+      <span class="ab-icon">🟨</span>
+      <span class="ab-label">YELLOW CARD</span>
+      <span class="ab-sub">Warning · −2</span>
+    </button>
+    <button class="action-btn negative penalty" onclick="openScanner('penalty')">
+      <span class="ab-icon">🟥</span>
+      <span class="ab-label">PENALTY</span>
+      <span class="ab-sub">Red Card · −5</span>
+    </button>
+  </div>
+</section>
+
+<!-- ── manual points adjustment ───────────────────────────────────────────────── -->
+<section class="admin-section">
+  <h2 class="admin-section-title">✏️ MANUAL ADJUSTMENT</h2>
+  <p class="admin-section-sub">Enter a student ID manually to add or deduct points</p>
+  <div class="add-form">
+    <div class="form-row">
+      <label class="form-label">STUDENT ID (4 digits)</label>
+      <input type="number" id="manual-id" class="form-input" placeholder="e.g. 4821"
+        onkeydown="if(event.key==='Enter') applyManual()"/>
+    </div>
+    <div class="manual-row">
+      <div class="form-row manual-mode-row">
+        <label class="form-label">ACTION</label>
+        <select id="manual-mode" class="form-input">
+          <option value="add">➕ Add Points</option>
+          <option value="deduct">➖ Deduct Points</option>
+        </select>
+      </div>
+      <div class="form-row manual-pts-row">
+        <label class="form-label">POINTS</label>
+        <input type="number" id="manual-pts" class="form-input" placeholder="e.g. 10" min="1"
+          onkeydown="if(event.key==='Enter') applyManual()"/>
+      </div>
+    </div>
+    <button class="add-btn" onclick="applyManual()">APPLY ✦</button>
+    <div id="manual-feedback" class="add-feedback"></div>
+  </div>
+</section>
+
+<!-- ── add student ────────────────────────────────────────────────────────────── -->
+<section class="admin-section">
+  <h2 class="admin-section-title">➕ ADD STUDENT</h2>
+  <p class="admin-section-sub">A unique 4-digit ID will be auto-generated</p>
+  <div class="add-form">
+    <div class="form-row">
+      <label class="form-label">STUDENT NAME</label>
+      <input type="text" id="new-name" class="form-input" placeholder="Enter full name…"/>
+    </div>
+    <div class="form-row">
+      <label class="form-label">TEAM</label>
+      <select id="new-team" class="form-input">
+        <option value="">— Select Team —</option>
+        <option value="1">Team 1 – جدعون</option>
+        <option value="2">Team 2 – شمشون</option>
+        <option value="3">Team 3 – يفتاح</option>
+        <option value="4">Team 4 – صموئيل النبي</option>
+      </select>
+    </div>
+    <button class="add-btn" onclick="addStudent()">ADD STUDENT ✦</button>
+    <div id="add-feedback" class="add-feedback"></div>
+  </div>
+</section>
+
+<!-- ── Sprint / Bonus prompt modal ────────────────────────────────────────────── -->
+<div id="bonus-modal" class="qr-modal">
+  <div class="qr-modal-inner bonus-modal-inner">
+    <button class="qr-close" onclick="closeBonusModal()">✕</button>
+    <div class="qr-modal-header">
+      <div class="qr-action-badge">🚀 SPRINT BONUS</div>
+      <p class="qr-action-desc">Enter the bonus points to award</p>
+    </div>
+    <div class="bonus-input-wrap">
+      <input type="number" id="bonus-input" class="form-input bonus-num-input"
+        placeholder="e.g. 20" min="1" max="999"
+        onkeydown="if(event.key==='Enter') confirmBonus()"/>
+      <p id="bonus-error" class="bonus-error"></p>
+    </div>
+    <button class="add-btn bonus-confirm-btn" onclick="confirmBonus()">CONFIRM &amp; SCAN ↦</button>
+  </div>
+</div>
+
+<!-- ── QR modal ───────────────────────────────────────────────────────────────── -->
+<div id="qr-modal" class="qr-modal">
+  <div class="qr-modal-inner">
+    <button class="qr-close" onclick="closeModal()">✕</button>
+    <div class="qr-modal-header">
+      <div class="qr-action-badge" id="modal-title">ACTION</div>
+      <p class="qr-action-desc" id="modal-desc"></p>
+    </div>
+    <div id="qr-reader" class="qr-reader-box"></div>
+    <div id="scan-result" class="scan-result"></div>
+    <button class="rescan-btn" onclick="rescan()">↺ RESCAN</button>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <p>ABAA Trends Cup © 2026 &nbsp;·&nbsp; Admin Panel</p>
+</footer>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function(){
+  const sf = document.getElementById("starfield");
+  for(let i=0;i<80;i++){
+    const s=document.createElement("div");
+    s.className="star";
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${Math.random()*2+1}px;height:${Math.random()*2+1}px;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*3}s`;
+    sf.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>

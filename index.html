@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ABAA Trends Cup – Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── PASTE YOUR FIREBASE CONFIG HERE ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCo9k2OLVQprNoCFEjEAHVInOcvS7NlUvo",
+  authDomain: "abrar-100.firebaseapp.com",
+  projectId: "abrar-100",
+  storageBucket: "abrar-100.firebasestorage.app",
+  messagingSenderId: "1031124601739",
+  appId: "1:1031124601739:web:0fbbf88a38d32ffae47d8e",
+  measurementId: "G-YCSYCQ6DV2"
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+let allStudents = [];
+let activeTeam  = "all";
+
+const TEAM_NAMES = { "1": "جدعون", "2": "شمشون", "3": "يفتاح", "4": "صموئيل النبي" };
+const TEAM_ICONS = { "1": "⚔️",    "2": "🦁",    "3": "🔥",    "4": "📜" };
+
+// ── live listener ─────────────────────────────────────────────────────────────
+onSnapshot(collection(db, "nady-abaa"), (snap) => {
+  allStudents = snap.docs.map(d => ({ name: d.id, ...d.data() }));
+  render();
+});
+
+// ── render ────────────────────────────────────────────────────────────────────
+function render() {
+  renderTeamCards();
+  renderLeaderboard();
+}
+
+function teamTotal(t) {
+  return allStudents.filter(s => String(s.team) === String(t)).reduce((a, s) => a + (s.score || 0), 0);
+}
+
+function renderTeamCards() {
+  const totals = ["1","2","3","4"].map(t => ({ team: t, score: teamTotal(t) }))
+    .sort((a, b) => b.score - a.score);
+
+  const rankLabel = ["🥇 1ST", "🥈 2ND", "🥉 3RD", "4TH"];
+
+  totals.forEach((t, rank) => {
+    const card = document.getElementById(`team-card-${t.team}`);
+    if (!card) return;
+    card.querySelector(".tc-rank").textContent  = rankLabel[rank];
+    card.querySelector(".tc-score").textContent = t.score.toLocaleString();
+    card.classList.toggle("active", activeTeam === t.team);
+    card.classList.remove("rank-1","rank-2","rank-3","rank-4");
+    card.classList.add(`rank-${rank+1}`);
+  });
+}
+
+function renderLeaderboard() {
+  const filtered = (activeTeam === "all"
+    ? [...allStudents]
+    : allStudents.filter(s => String(s.team) === activeTeam))
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+  const tbody = document.getElementById("lb-body");
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No players found</td></tr>`;
+    return;
+  }
+
+  const maxScore = Math.max(1, ...allStudents.map(x => x.score || 0));
+
+  tbody.innerHTML = filtered.map((s, i) => {
+    const pos = i + 1;
+    const medal = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : pos;
+    const teamBadge = `<span class="team-badge team-${s.team}">${TEAM_NAMES[s.team] || s.team}</span>`;
+    const bar = `<div class="score-bar-wrap"><div class="score-bar" style="width:${Math.min(100,((s.score||0)/maxScore)*100)}%"></div></div>`;
+    const topClass = pos <= 3 ? `top-${pos}` : "";
+    return `
+      <tr class="lb-row ${topClass}" style="animation-delay:${i*40}ms">
+        <td class="pos-cell">${medal}</td>
+        <td class="id-cell">#${s.id || "----"}</td>
+        <td class="name-cell">${s.name}</td>
+        <td class="team-cell">${teamBadge}</td>
+        <td class="score-cell">
+          <span class="score-num">${(s.score||0).toLocaleString()}</span>
+          ${bar}
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+// ── expose filter fn globally ─────────────────────────────────────────────────
+window.filterTeam = (team) => {
+  activeTeam = (activeTeam === team) ? "all" : team;
+  document.querySelectorAll(".team-card").forEach(c => c.classList.remove("active"));
+  if (activeTeam !== "all") {
+    document.getElementById(`team-card-${activeTeam}`)?.classList.add("active");
+  }
+  render();
+};
+</script>
+</head>
+<body class="main-page">
+
+<div class="starfield" id="starfield"></div>
+
+<!-- ── header ─────────────────────────────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <div class="logo-shield">
+        <div class="shield-cross">✝</div>
+        <div class="shield-text">
+          <span class="st-abaa">ABAA<br>TRENDS</span>
+          <span class="st-cup">CUP</span>
+        </div>
+        <div class="shield-crown">♛</div>
+      </div>
+    </div>
+    <div class="header-title">
+      <p class="ht-sub">Season 2026</p>
+      <h1 class="ht-main">ABAA TRENDS CUP</h1>
+      <p class="ht-tagline">The Championship Leaderboard</p>
+    <!-- </div>
+    <a href="admin.html" class="admin-link">⚙ ADMIN</a>
+  </div> -->
+  <div class="header-glow"></div>
+</header>
+
+<!-- ── team filter cards ──────────────────────────────────────────────────────── -->
+<section class="teams-section">
+  <div class="teams-grid">
+
+    <div class="team-card" id="team-card-1" onclick="filterTeam('1')">
+      <div class="tc-rank">──</div>
+      <div class="tc-icon">⚔️</div>
+      <div class="tc-name">جدعون</div>
+      <div class="tc-label">TEAM 1</div>
+      <div class="tc-score-wrap">
+        <span class="tc-score">0</span>
+        <span class="tc-pts">PTS</span>
+      </div>
+    </div>
+
+    <div class="team-card" id="team-card-2" onclick="filterTeam('2')">
+      <div class="tc-rank">──</div>
+      <div class="tc-icon">🦁</div>
+      <div class="tc-name">شمشون</div>
+      <div class="tc-label">TEAM 2</div>
+      <div class="tc-score-wrap">
+        <span class="tc-score">0</span>
+        <span class="tc-pts">PTS</span>
+      </div>
+    </div>
+
+    <div class="team-card" id="team-card-3" onclick="filterTeam('3')">
+      <div class="tc-rank">──</div>
+      <div class="tc-icon">🔥</div>
+      <div class="tc-name">يفتاح</div>
+      <div class="tc-label">TEAM 3</div>
+      <div class="tc-score-wrap">
+        <span class="tc-score">0</span>
+        <span class="tc-pts">PTS</span>
+      </div>
+    </div>
+
+    <div class="team-card" id="team-card-4" onclick="filterTeam('4')">
+      <div class="tc-rank">──</div>
+      <div class="tc-icon">📜</div>
+      <div class="tc-name">صموئيل</div>
+      <div class="tc-label">TEAM 4</div>
+      <div class="tc-score-wrap">
+        <span class="tc-score">0</span>
+        <span class="tc-pts">PTS</span>
+      </div>
+    </div>
+
+  </div>
+  <p class="filter-hint">Click a team to filter • Click again to clear</p>
+</section>
+
+<!-- ── leaderboard ────────────────────────────────────────────────────────────── -->
+<main class="lb-section">
+  <div class="lb-header-row">
+    <h2 class="lb-title">⭐ STANDINGS</h2>
+    <div class="lb-live"><span class="live-dot"></span> LIVE</div>
+  </div>
+  <div class="lb-table-wrap">
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ID</th>
+          <th>PLAYER</th>
+          <th>TEAM</th>
+          <th>SCORE</th>
+        </tr>
+      </thead>
+      <tbody id="lb-body">
+        <tr><td colspan="5" class="empty-row">Connecting to Firebase…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>ABAA Trends Cup © 2026 &nbsp;·&nbsp;</p>
+</footer>
+
+<script>
+(function(){
+  const sf = document.getElementById("starfield");
+  for(let i=0;i<120;i++){
+    const s=document.createElement("div");
+    s.className="star";
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${Math.random()*2+1}px;height:${Math.random()*2+1}px;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*3}s`;
+    sf.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>
