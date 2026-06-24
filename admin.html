@@ -190,36 +190,77 @@ window.addStudent = async () => {
   teamSel.value   = "";
 };
 
-// ── manual points adjustment ──────────────────────────────────────────────────
+// ── manual points adjustment (search by name) ─────────────────────────────────
+let allStudentsCache = [];
+let selectedStudentDocId = null;
+
+async function loadStudentsCache() {
+  const snap = await getDocs(collection(db, "nady-abaa"));
+  allStudentsCache = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+}
+// load once on page ready
+loadStudentsCache();
+
+window.onManualSearchInput = () => {
+  const query = document.getElementById("manual-search").value.trim().toLowerCase();
+  const dropdown = document.getElementById("manual-suggestions");
+  selectedStudentDocId = null;
+  document.getElementById("manual-selected").textContent = "";
+
+  if (query.length < 1) { dropdown.innerHTML = ""; dropdown.style.display = "none"; return; }
+
+  const matches = allStudentsCache.filter(s =>
+    s.docId.toLowerCase().includes(query)
+  );
+
+  if (!matches.length) {
+    dropdown.innerHTML = `<div class="suggestion-empty">No matches found</div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(s =>
+    `<div class="suggestion-item" onclick="selectStudent('${s.docId.replace(/'/g,"\\'")}', '${s.id}', '${s.team}')">
+      <span class="sug-name">${s.docId}</span>
+      <span class="sug-meta">ID: ${s.id} &nbsp;·&nbsp; Team ${s.team}</span>
+    </div>`
+  ).join("");
+  dropdown.style.display = "block";
+};
+
+window.selectStudent = (docId, id, team) => {
+  selectedStudentDocId = docId;
+  document.getElementById("manual-search").value = docId;
+  document.getElementById("manual-suggestions").style.display = "none";
+  document.getElementById("manual-selected").textContent = "✔ Selected: " + docId + "  (ID: " + id + ", Team " + team + ")";
+  document.getElementById("manual-pts").focus();
+};
+
 window.applyManual = async () => {
-  const idInput  = document.getElementById("manual-id");
   const ptsInput = document.getElementById("manual-pts");
   const modeEl   = document.getElementById("manual-mode");
   const fb       = document.getElementById("manual-feedback");
+  const pts      = parseInt(ptsInput.value, 10);
+  const mode     = modeEl.value;
 
-  const studentId = idInput.value.trim();
-  const pts       = parseInt(ptsInput.value, 10);
-  const mode      = modeEl.value; // "add" or "deduct"
-
-  if (!studentId) { fb.textContent = "⚠ Enter a student ID."; fb.className = "fb-error"; return; }
+  if (!selectedStudentDocId) { fb.textContent = "⚠ Search and select a student first."; fb.className = "fb-error"; return; }
   if (isNaN(pts) || pts <= 0) { fb.textContent = "⚠ Enter a valid positive number."; fb.className = "fb-error"; return; }
 
   fb.textContent = "Applying…"; fb.className = "fb-loading";
 
-  const match = await findStudentById(studentId);
-  if (!match) {
-    fb.textContent = "⚠ No student found with ID: " + studentId;
-    fb.className = "fb-error"; return;
-  }
-
   const delta = mode === "deduct" ? -pts : pts;
-  await applyDelta(match.id, delta);
+  await applyDelta(selectedStudentDocId, delta);
 
   const sign = delta > 0 ? "+" : "";
-  fb.textContent = "✅ " + match.id + ": " + sign + delta + " pts applied.";
+  fb.textContent = "✅ " + selectedStudentDocId + ": " + sign + delta + " pts applied.";
   fb.className = "fb-success";
-  idInput.value  = "";
+
+  // reset
+  selectedStudentDocId = null;
+  document.getElementById("manual-search").value = "";
+  document.getElementById("manual-selected").textContent = "";
   ptsInput.value = "";
+  await loadStudentsCache(); // refresh cache in case scores changed
 };
 </script>
 </head>
@@ -291,13 +332,15 @@ window.applyManual = async () => {
 <!-- ── manual points adjustment ───────────────────────────────────────────────── -->
 <section class="admin-section">
   <h2 class="admin-section-title">✏️ MANUAL ADJUSTMENT</h2>
-  <p class="admin-section-sub">Enter a student ID manually to add or deduct points</p>
+  <p class="admin-section-sub">Search by name, select the student, then add or deduct points</p>
   <div class="add-form">
-    <div class="form-row">
-      <label class="form-label">STUDENT ID (4 digits)</label>
-      <input type="number" id="manual-id" class="form-input" placeholder="e.g. 4821"
-        onkeydown="if(event.key==='Enter') applyManual()"/>
+    <div class="form-row" style="position:relative;">
+      <label class="form-label">SEARCH STUDENT NAME</label>
+      <input type="text" id="manual-search" class="form-input" placeholder="Start typing a name…"
+        oninput="onManualSearchInput()" autocomplete="off"/>
+      <div id="manual-suggestions" class="suggestions-dropdown" style="display:none;"></div>
     </div>
+    <div id="manual-selected" class="manual-selected-badge"></div>
     <div class="manual-row">
       <div class="form-row manual-mode-row">
         <label class="form-label">ACTION</label>

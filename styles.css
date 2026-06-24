@@ -316,6 +316,33 @@ body {
 .manual-mode-row, .manual-pts-row { margin-bottom: 0; }
 @media (max-width: 480px) { .manual-row { grid-template-columns: 1fr; } }
 
+/* name search dropdown */
+.suggestions-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: #0d1e3a; border: 1px solid rgba(240,192,64,.4);
+  border-top: none; border-radius: 0 0 8px 8px;
+  max-height: 220px; overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,.6);
+}
+.suggestion-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 1rem; cursor: pointer; gap: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  transition: background .15s;
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background: rgba(240,192,64,.1); }
+.sug-name { font-family: var(--font-body); font-weight: 700; color: var(--white); font-size: .95rem; }
+.sug-meta { font-family: var(--font-ui); font-size: .65rem; letter-spacing: .1em; color: var(--off-white); opacity: .55; white-space: nowrap; }
+.suggestion-empty { padding: .75rem 1rem; font-family: var(--font-ui); font-size: .75rem; color: var(--off-white); opacity: .4; text-align: center; }
+
+/* selected student badge */
+.manual-selected-badge {
+  font-family: var(--font-ui); font-size: .75rem; font-weight: 600;
+  letter-spacing: .1em; color: var(--green);
+  min-height: 1.4em; margin-bottom: .5rem;
+}
+
 /* ── Bonus prompt modal extras ─────────────────────────────────────────────────*/
 .bonus-modal-inner { max-width: 340px; }
 .bonus-input-wrap  { margin: 1rem 0; }
