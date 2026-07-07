@@ -9,7 +9,276 @@
 <title>ABAA Trends Cup – Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="styles.css"/>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ABAA TRENDS CUP — Shared Styles
+   Palette: Deep Navy #0a1128 | Royal Blue #1a3a7c | Gold #f0c040 | White #f5f5ff
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --navy:      #07101f;
+  --navy2:     #0d1e3a;
+  --navy3:     #1a2f55;
+  --royal:     #1a3a7c;
+  --blue-mid:  #2256b5;
+  --gold:      #f0c040;
+  --gold-dark: #c9951c;
+  --gold-glow: rgba(240,192,64,.35);
+  --white:     #f5f5ff;
+  --off-white: #ccd6f6;
+  --red:       #e63946;
+  --green:     #2ecc71;
+  /* 4 team accent colours */
+  --t1: #4fc3f7;   /* جدعون  – sky blue  */
+  --t2: #f9a825;   /* شمشون  – amber     */
+  --t3: #ef5350;   /* يفتاح  – crimson   */
+  --t4: #ab47bc;   /* صموئيل – violet    */
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui:      'Oswald', sans-serif;
+  --font-body:    'Rajdhani', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── starfield ─────────────────────────────────────────────────────────────────*/
+.starfield { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star {
+  position: absolute; background: #fff; border-radius: 50%;
+  animation: twinkle ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity: .1; transform: scale(1); }
+  50%      { opacity: .9; transform: scale(1.4); }
+}
+
+/* ── site header ───────────────────────────────────────────────────────────────*/
+.site-header {
+  position: relative; z-index: 10;
+  background: linear-gradient(180deg, #050d1c 0%, var(--navy2) 100%);
+  border-bottom: 2px solid var(--gold);
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 40px rgba(0,0,0,.8);
+}
+.header-glow {
+  position: absolute; bottom: -2px; left: 0; right: 0; height: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 20px 6px var(--gold-glow);
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; gap: 1.5rem;
+}
+
+.logo-wrap { flex-shrink: 0; }
+.logo-shield {
+  width: 90px; height: 105px;
+  background: linear-gradient(160deg, var(--royal) 0%, #0d1e3a 100%);
+  border: 3px solid var(--gold);
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; gap: 2px;
+  box-shadow: 0 0 20px var(--gold-glow), inset 0 0 20px rgba(0,0,0,.4);
+}
+.logo-shield.small { width: 64px; height: 76px; }
+.shield-cross { font-size: 1.2rem; color: var(--gold); text-shadow: 0 0 10px var(--gold); line-height: 1; }
+.logo-shield.small .shield-cross { font-size: .9rem; }
+.shield-text { text-align: center; line-height: 1; }
+.st-abaa { display: block; font-family: var(--font-display); font-size: .55rem; color: var(--white); letter-spacing: .05em; }
+.logo-shield.small .st-abaa { font-size: .42rem; }
+.st-cup  { display: block; font-family: var(--font-display); font-size: .9rem; color: var(--gold); letter-spacing: .1em; }
+.logo-shield.small .st-cup { font-size: .7rem; }
+.shield-crown { font-size: .85rem; color: var(--gold); line-height: 1; }
+.logo-shield.small .shield-crown { font-size: .65rem; }
+
+.header-title { flex: 1; }
+.ht-sub {
+  font-family: var(--font-ui); font-size: .7rem; font-weight: 300;
+  letter-spacing: .25em; color: var(--gold); text-transform: uppercase;
+}
+.ht-main {
+  font-family: var(--font-display); font-size: 2.2rem; letter-spacing: .06em; line-height: 1;
+  background: linear-gradient(90deg, var(--white) 0%, var(--gold) 60%, var(--white) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.ht-tagline {
+  font-family: var(--font-ui); font-size: .75rem; font-weight: 300;
+  letter-spacing: .2em; color: var(--off-white); opacity: .7; text-transform: uppercase;
+}
+.admin-link {
+  font-family: var(--font-ui); font-size: .75rem; font-weight: 600;
+  letter-spacing: .15em; color: var(--gold);
+  border: 1px solid var(--gold); border-radius: 4px;
+  padding: .4rem .9rem; text-decoration: none; transition: all .2s; white-space: nowrap;
+}
+.admin-link:hover { background: var(--gold); color: var(--navy); }
+
+/* ── admin page ────────────────────────────────────────────────────────────────*/
+.admin-section { position: relative; z-index: 5; max-width: 900px; margin: 2rem auto; padding: 0 2rem; }
+.admin-section-title { font-family: var(--font-display); font-size: 1.4rem; letter-spacing: .1em; color: var(--gold); margin-bottom: .3rem; }
+.admin-section-sub   { font-family: var(--font-ui); font-size: .75rem; letter-spacing: .15em; color: var(--off-white); opacity: .5; margin-bottom: 1.5rem; }
+
+.actions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+
+.action-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .4rem; padding: 1.4rem 1rem;
+  border: 2px solid transparent; border-radius: 12px;
+  cursor: pointer; font-family: var(--font-body);
+  transition: all .25s cubic-bezier(.175,.885,.32,1.275);
+  position: relative; overflow: hidden; background: none;
+}
+.action-btn.positive {
+  background: linear-gradient(145deg, rgba(26,58,124,.6) 0%, rgba(13,30,58,.8) 100%);
+  border-color: rgba(46,204,113,.4);
+}
+.action-btn.positive:hover { border-color: var(--green); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(46,204,113,.25); }
+.action-btn.sprint  { border-color: rgba(240,192,64,.5); }
+.action-btn.sprint:hover { border-color: var(--gold); box-shadow: 0 8px 25px var(--gold-glow); }
+.action-btn.negative {
+  background: linear-gradient(145deg, rgba(60,20,20,.6) 0%, rgba(20,10,10,.8) 100%);
+  border-color: rgba(230,57,70,.3);
+}
+.action-btn.negative:hover { border-color: var(--red); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(230,57,70,.3); }
+.action-btn.penalty { border-color: rgba(230,57,70,.5); }
+
+.ab-icon  { font-size: 2rem; }
+.ab-label { font-family: var(--font-display); font-size: 1.2rem; letter-spacing: .08em; color: var(--white); }
+.ab-sub   { font-family: var(--font-ui); font-size: .65rem; font-weight: 500; letter-spacing: .1em; opacity: .6; }
+.action-btn.positive .ab-sub { color: var(--green); opacity: 1; }
+.action-btn.sprint .ab-sub   { color: var(--gold);  opacity: 1; }
+.action-btn.negative .ab-sub { color: var(--red);   opacity: 1; }
+
+/* ── add form ──────────────────────────────────────────────────────────────────*/
+.add-form {
+  background: linear-gradient(145deg, var(--navy2), var(--navy));
+  border: 1px solid rgba(240,192,64,.2); border-radius: 12px;
+  padding: 1.8rem; max-width: 480px;
+}
+.form-row { margin-bottom: 1rem; }
+.form-label { display: block; font-family: var(--font-ui); font-size: .7rem; font-weight: 700; letter-spacing: .2em; color: var(--gold); margin-bottom: .4rem; }
+.form-input {
+  width: 100%; padding: .75rem 1rem;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(240,192,64,.25);
+  border-radius: 8px; color: var(--white);
+  font-family: var(--font-body); font-size: 1rem;
+  outline: none; transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--gold); background: rgba(255,255,255,.08); }
+.form-input option { background: #0d1e3a; }
+.add-btn {
+  width: 100%; padding: .85rem;
+  background: linear-gradient(90deg, var(--gold-dark) 0%, var(--gold) 100%);
+  border: none; border-radius: 8px;
+  font-family: var(--font-display); font-size: 1.1rem; letter-spacing: .12em;
+  color: var(--navy); cursor: pointer; transition: all .2s;
+  box-shadow: 0 4px 20px var(--gold-glow);
+}
+.add-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--gold-glow); }
+.add-feedback { margin-top: .75rem; font-family: var(--font-ui); font-size: .8rem; font-weight: 600; letter-spacing: .1em; text-align: center; min-height: 1.2em; }
+.fb-success { color: var(--green); }
+.fb-error   { color: var(--red); }
+.fb-loading { color: var(--gold); opacity: .7; }
+
+/* name search dropdown */
+.suggestions-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: #0d1e3a; border: 1px solid rgba(240,192,64,.4);
+  border-top: none; border-radius: 0 0 8px 8px;
+  max-height: 220px; overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,.6);
+}
+.suggestion-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 1rem; cursor: pointer; gap: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  transition: background .15s;
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background: rgba(240,192,64,.1); }
+.sug-name { font-family: var(--font-body); font-weight: 700; color: var(--white); font-size: .95rem; }
+.sug-meta { font-family: var(--font-ui); font-size: .65rem; letter-spacing: .1em; color: var(--off-white); opacity: .55; white-space: nowrap; }
+.suggestion-empty { padding: .75rem 1rem; font-family: var(--font-ui); font-size: .75rem; color: var(--off-white); opacity: .4; text-align: center; }
+
+/* selected student badge */
+.manual-selected-badge {
+  font-family: var(--font-ui); font-size: .75rem; font-weight: 600;
+  letter-spacing: .1em; color: var(--green);
+  min-height: 1.4em; margin-bottom: .5rem;
+}
+
+/* ── QR modal ──────────────────────────────────────────────────────────────────*/
+.qr-modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(5,10,20,.92); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+.qr-modal.open { opacity: 1; pointer-events: all; }
+.qr-modal-inner {
+  background: linear-gradient(160deg, var(--navy2) 0%, var(--navy) 100%);
+  border: 2px solid var(--gold); border-radius: 16px;
+  padding: 2rem; max-width: 400px; width: 92%;
+  text-align: center; position: relative;
+  box-shadow: 0 0 60px var(--gold-glow);
+}
+.qr-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--off-white); font-size: 1.2rem; cursor: pointer; opacity: .6; transition: opacity .2s; }
+.qr-close:hover { opacity: 1; }
+.qr-modal-header { margin-bottom: 1.2rem; }
+.qr-action-badge { display: inline-block; font-family: var(--font-display); font-size: 1.8rem; letter-spacing: .1em; color: var(--gold); margin-bottom: .3rem; }
+.qr-action-desc  { font-family: var(--font-ui); font-size: .8rem; font-weight: 500; letter-spacing: .15em; color: var(--off-white); opacity: .6; }
+.qr-reader-box   { width: 100%; border-radius: 10px; overflow: hidden; border: 2px solid rgba(240,192,64,.3); min-height: 240px; background: #000; }
+#qr-reader { border: none !important; }
+#qr-reader video { border-radius: 8px; }
+#qr-reader__dashboard { display: none !important; }
+.scan-result {
+  margin-top: 1rem; padding: .75rem;
+  font-family: var(--font-ui); font-size: .85rem; font-weight: 600; letter-spacing: .08em; line-height: 1.5;
+  border-radius: 8px; min-height: 1.5em; white-space: pre-line;
+}
+.scan-result.success { background: rgba(46,204,113,.1); color: var(--green); border: 1px solid rgba(46,204,113,.3); }
+.scan-result.error   { background: rgba(230,57,70,.1);  color: var(--red);   border: 1px solid rgba(230,57,70,.3); }
+.scan-result.loading { color: var(--gold); opacity: .7; }
+.rescan-btn {
+  margin-top: .75rem; background: none; border: 1px solid rgba(240,192,64,.4); border-radius: 8px;
+  padding: .5rem 1.5rem; font-family: var(--font-ui); font-size: .75rem; font-weight: 700;
+  letter-spacing: .2em; color: var(--gold); cursor: pointer; transition: all .2s;
+}
+.rescan-btn:hover { background: rgba(240,192,64,.1); }
+
+/* ── site footer ───────────────────────────────────────────────────────────────*/
+.site-footer {
+  position: relative; z-index: 5; text-align: center; padding: 1.5rem;
+  font-family: var(--font-ui); font-size: .7rem; font-weight: 300;
+  letter-spacing: .2em; color: var(--off-white); opacity: .3;
+  border-top: 1px solid rgba(240,192,64,.1);
+}
+
+/* ── responsive ────────────────────────────────────────────────────────────────*/
+@media (max-width: 900px) {
+  .teams-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .header-inner { gap: .75rem; }
+  .logo-shield  { width: 60px; height: 70px; }
+  .ht-main      { font-size: 1.5rem; }
+  .ht-sub, .ht-tagline { display: none; }
+  .actions-grid { grid-template-columns: 1fr 1fr; }
+  .ab-icon      { font-size: 1.5rem; }
+  .ab-label     { font-size: 1rem; }
+}
+</style>
 
 <!-- Firebase -->
 <script type="module">
@@ -30,13 +299,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
+// MAP now handles all flat values in the background
 const ACTION_MAP = {
-  "attack":  { delta: +5,   label: "Attack",     desc: "Attendance · +5",  variable: false },
-  "head":    { delta: +10,  label: "Head",        desc: "Tasmee3 · +10",   variable: false },
-  "assist":  { delta: +3,   label: "Assist",      desc: "Interaction · +3", variable: false },
-  "sprint":  { delta: null, label: "Sprint",      desc: "Bonus · variable", variable: true  },
-  "yellow":  { delta: -2,   label: "Yellow Card", desc: "Warning · −2",     variable: false },
-  "penalty": { delta: -5,   label: "Penalty",     desc: "Red Card · −5",    variable: false }
+  "attack-mon": { delta: +5,   label: "Attack (Monday)", desc: "Attendance" },
+  "attack-tue": { delta: +10,  label: "Attack (Tuesday)",desc: "Attendance" },
+  "head":       { delta: +10,  label: "Head",            desc: "Tasmee3" },
+  "assist":     { delta: +3,   label: "Assist",          desc: "Interaction" },
+  "sprint":     { delta: +10,  label: "Sprint",         desc: "Mosab2a" },
+  "yellow":     { delta: -2,   label: "Yellow Card",     desc: "Warning" },
+  "penalty":    { delta: -5,   label: "Penalty",         desc: "Red Card" }
 };
 
 let currentAction  = null;
@@ -102,38 +373,28 @@ async function onScanSuccess(decodedText) {
   const delta = currentAction.delta;
   await applyDelta(match.id, delta);
 
-  const sign = delta > 0 ? "+" : "";
-  showResult("success", "✅ " + match.id + "\n" + currentAction.label + ": " + sign + delta + " pts");
+  // No points are visible in the successful scan message
+  showResult("success", "✅ " + match.id + "\nApplied: " + currentAction.label);
   scanProcessing = false;
 }
 
-// ── open action → maybe bonus prompt → QR modal ───────────────────────────────
+// ── Modals & Navigation ───────────────────────────────────────────────
 window.openScanner = (actionKey) => {
-  const action = { ...ACTION_MAP[actionKey] };
-  if (action.variable) {
-    document.getElementById("bonus-modal").classList.add("open");
-    document.getElementById("bonus-input").value = "";
-    document.getElementById("bonus-error").textContent = "";
-    window._pendingActionKey = actionKey;
-    setTimeout(() => document.getElementById("bonus-input").focus(), 150);
-    return;
-  }
-  launchQrModal(action);
+  launchQrModal(ACTION_MAP[actionKey]);
 };
 
-window.confirmBonus = () => {
-  const val = parseInt(document.getElementById("bonus-input").value, 10);
-  if (isNaN(val) || val <= 0) {
-    document.getElementById("bonus-error").textContent = "⚠ Please enter a positive number.";
-    return;
-  }
-  document.getElementById("bonus-modal").classList.remove("open");
-  const action = { ...ACTION_MAP[window._pendingActionKey], delta: val, desc: "Bonus · +" + val };
-  launchQrModal(action);
+// Attack day selector logic
+window.openAttackModal = () => {
+  document.getElementById("attack-modal").classList.add("open");
 };
 
-window.closeBonusModal = () => {
-  document.getElementById("bonus-modal").classList.remove("open");
+window.closeAttackModal = () => {
+  document.getElementById("attack-modal").classList.remove("open");
+};
+
+window.selectAttackDay = (day) => {
+  closeAttackModal();
+  launchQrModal(ACTION_MAP['attack-' + day]);
 };
 
 function launchQrModal(action) {
@@ -236,33 +497,28 @@ window.selectStudent = (docId, id, team) => {
   document.getElementById("manual-search").value = docId;
   document.getElementById("manual-suggestions").style.display = "none";
   document.getElementById("manual-selected").textContent = "✔ Selected: " + docId + "  (ID: " + id + ", Team " + team + ")";
-  document.getElementById("manual-pts").focus();
+  document.getElementById("manual-mode").focus();
 };
 
 window.applyManual = async () => {
-  const ptsInput = document.getElementById("manual-pts");
-  const modeEl   = document.getElementById("manual-mode");
-  const fb       = document.getElementById("manual-feedback");
-  const pts      = parseInt(ptsInput.value, 10);
-  const mode     = modeEl.value;
+  const actionKey = document.getElementById("manual-mode").value;
+  const fb        = document.getElementById("manual-feedback");
 
   if (!selectedStudentDocId) { fb.textContent = "⚠ Search and select a student first."; fb.className = "fb-error"; return; }
-  if (isNaN(pts) || pts <= 0) { fb.textContent = "⚠ Enter a valid positive number."; fb.className = "fb-error"; return; }
 
   fb.textContent = "Applying…"; fb.className = "fb-loading";
 
-  const delta = mode === "deduct" ? -pts : pts;
-  await applyDelta(selectedStudentDocId, delta);
+  const action = ACTION_MAP[actionKey];
+  await applyDelta(selectedStudentDocId, action.delta);
 
-  const sign = delta > 0 ? "+" : "";
-  fb.textContent = "✅ " + selectedStudentDocId + ": " + sign + delta + " pts applied.";
+  // No points shown
+  fb.textContent = "✅ " + selectedStudentDocId + ": " + action.label + " applied.";
   fb.className = "fb-success";
 
   // reset
   selectedStudentDocId = null;
   document.getElementById("manual-search").value = "";
   document.getElementById("manual-selected").textContent = "";
-  ptsInput.value = "";
   await loadStudentsCache(); // refresh cache in case scores changed
 };
 </script>
@@ -299,35 +555,35 @@ window.applyManual = async () => {
   <h2 class="admin-section-title">⚡ SCORE ACTIONS</h2>
   <p class="admin-section-sub">Tap an action, then scan the student's QR code</p>
   <div class="actions-grid">
-    <button class="action-btn positive" onclick="openScanner('attack')">
+    <button class="action-btn positive" onclick="openAttackModal()">
       <span class="ab-icon">🎯</span>
       <span class="ab-label">ATTACK</span>
-      <span class="ab-sub">Attendance · +5</span>
+      <span class="ab-sub">Attendance</span>
     </button>
     <button class="action-btn positive" onclick="openScanner('head')">
       <span class="ab-icon">🧠</span>
       <span class="ab-label">HEAD</span>
-      <span class="ab-sub">Tasmee3 · +10</span>
+      <span class="ab-sub">Tasmee3</span>
     </button>
     <button class="action-btn positive" onclick="openScanner('assist')">
       <span class="ab-icon">🤝</span>
       <span class="ab-label">ASSIST</span>
-      <span class="ab-sub">Interaction · +3</span>
+      <span class="ab-sub">Interaction</span>
     </button>
     <button class="action-btn positive sprint" onclick="openScanner('sprint')">
       <span class="ab-icon">🚀</span>
-      <span class="ab-label">SPRINT</span>
-      <span class="ab-sub">Bonus · variable ✎</span>
+      <span class="ab-label">Sprint</span>
+      <span class="ab-sub">Mosab2a</span>
     </button>
     <button class="action-btn negative" onclick="openScanner('yellow')">
       <span class="ab-icon">🟨</span>
       <span class="ab-label">YELLOW CARD</span>
-      <span class="ab-sub">Warning · −2</span>
+      <span class="ab-sub">Warning</span>
     </button>
     <button class="action-btn negative penalty" onclick="openScanner('penalty')">
       <span class="ab-icon">🟥</span>
       <span class="ab-label">PENALTY</span>
-      <span class="ab-sub">Red Card · −5</span>
+      <span class="ab-sub">Red Card</span>
     </button>
   </div>
 </section>
@@ -335,7 +591,7 @@ window.applyManual = async () => {
 <!-- ── manual points adjustment ───────────────────────────────────────────────── -->
 <section class="admin-section"> 
   <h2 class="admin-section-title">✏️ MANUAL ADJUSTMENT</h2>
-  <p class="admin-section-sub">Search by name, select the student, then add or deduct points</p>
+  <p class="admin-section-sub">Search by name, select the student, then apply action</p>
   <div class="add-form">
     <div class="form-row" style="position:relative;">
       <label class="form-label">SEARCH STUDENT NAME</label>
@@ -344,20 +600,20 @@ window.applyManual = async () => {
       <div id="manual-suggestions" class="suggestions-dropdown" style="display:none;"></div>
     </div>
     <div id="manual-selected" class="manual-selected-badge"></div>
-    <div class="manual-row">
-      <div class="form-row manual-mode-row">
-        <label class="form-label">ACTION</label>
-        <select id="manual-mode" class="form-input">
-          <option value="add">➕ Add Points</option>
-          <option value="deduct">➖ Deduct Points</option>
-        </select>
-      </div>
-      <div class="form-row manual-pts-row">
-        <label class="form-label">POINTS</label>
-        <input type="number" id="manual-pts" class="form-input" placeholder="e.g. 10" min="1"
-          onkeydown="if(event.key==='Enter') applyManual()"/>
-      </div>
+    
+    <div class="form-row manual-mode-row">
+      <label class="form-label">ACTION</label>
+      <select id="manual-mode" class="form-input">
+        <option value="attack-mon">Attack (Monday) - Attendance</option>
+        <option value="attack-tue">Attack (Tuesday) - Attendance</option>
+        <option value="head">Head - Tasmee3</option>
+        <option value="assist">Assist - Interaction</option>
+        <option value="sprint">Sprint - Mosab2a</option>
+        <option value="yellow">Yellow Card - Warning</option>
+        <option value="penalty">Penalty - Red Card</option>
+      </select>
     </div>
+
     <button class="add-btn" onclick="applyManual()">APPLY ✦</button>
     <div id="manual-feedback" class="add-feedback"></div>
   </div>
@@ -387,21 +643,18 @@ window.applyManual = async () => {
   </div>
 </section>
 
-<!-- ── Sprint / Bonus prompt modal ────────────────────────────────────────────── -->
-<div id="bonus-modal" class="qr-modal">
-  <div class="qr-modal-inner bonus-modal-inner">
-    <button class="qr-close" onclick="closeBonusModal()">✕</button>
+<!-- ── Attack Day Selection Modal ──────────────────────────────────────────────── -->
+<div id="attack-modal" class="qr-modal">
+  <div class="qr-modal-inner" style="max-width: 320px;">
+    <button class="qr-close" onclick="closeAttackModal()">✕</button>
     <div class="qr-modal-header">
-      <div class="qr-action-badge">🚀 SPRINT BONUS</div>
-      <p class="qr-action-desc">Enter the bonus points to award</p>
+      <div class="qr-action-badge">🎯 ATTACK</div>
+      <p class="qr-action-desc">Select Attendance Day</p>
     </div>
-    <div class="bonus-input-wrap">
-      <input type="number" id="bonus-input" class="form-input bonus-num-input"
-        placeholder="e.g. 20" min="1" max="999"
-        onkeydown="if(event.key==='Enter') confirmBonus()"/>
-      <p id="bonus-error" class="bonus-error"></p>
+    <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+      <button class="add-btn" onclick="selectAttackDay('mon')">MONDAY</button>
+      <button class="add-btn" onclick="selectAttackDay('tue')">TUESDAY</button>
     </div>
-    <button class="add-btn bonus-confirm-btn" onclick="confirmBonus()">CONFIRM &amp; SCAN ↦</button>
   </div>
 </div>
 
